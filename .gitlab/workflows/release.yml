@@ -1,0 +1,49 @@
+name: Release binary
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    name: Build and release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          [
+            aarch64-unknown-linux-gnu,
+            x86_64-apple-darwin,
+            x86_64-pc-windows-gnu,
+            x86_64-unknown-linux-gnu,
+          ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: ${{ matrix.target }}
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target ${{ matrix.target }}
+      - name: Package
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release          
+          # UPDATEME: replace the string "udp2sse" with your binary's name.
+          tar czvf ../../../udp2sse-${{ matrix.target }}.tar.gz udp2sse
+          cd -
+      - name: Publish
+        uses: softprops/action-gh-release@v1
+        with:
+          files: 'udp2sse*'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
