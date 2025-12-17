@@ -1,9 +1,16 @@
 [package]
 name = "udp2sse"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Riccardo Tornesello"]
+description = "A lightweight bridge between UDP streams and Server-Sent Events (SSE)"
+license = "MIT"
+repository = "https://github.com/riccardotornesello/udp2sse"
+homepage = "https://github.com/riccardotornesello/udp2sse"
+documentation = "https://github.com/riccardotornesello/udp2sse#readme"
+keywords = ["udp", "sse", "server-sent-events", "streaming", "realtime"]
+categories = ["network-programming", "web-programming"]
+readme = "README.md"
 
 [dependencies]
 actix-web = "4.3.1"

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>udp2sse Client Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .connected .status-dot {
+            background: #28a745;
+        }
+
+        .disconnected .status-dot {
+            background: #dc3545;
+        }
+
+        .connecting .status-dot {
+            background: #ffc107;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .messages {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .messages-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+
+        .messages-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .clear-btn {
+            padding: 6px 12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+        }
+
+        .messages-list {
+            padding: 10px;
+        }
+
+        .message {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .message.event-connected {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .message.event-ping {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .message-type {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #667eea;
+        }
+
+        .message.event-connected .message-type {
+            color: #28a745;
+        }
+
+        .message.event-ping .message-type {
+            color: #ffc107;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #6c757d;
+        }
+
+        .message-content {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌊 udp2sse Client Demo</h1>
+            <div id="status" class="status connecting">
+                <span class="status-dot"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="message-count">0</div>
+                    <div class="stat-label">Messages</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="data-count">0</div>
+                    <div class="stat-label">Data Events</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="ping-count">0</div>
+                    <div class="stat-label">Pings</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="messages">
+            <div class="messages-header">
+                <span class="messages-title">Event Stream</span>
+                <button class="clear-btn" onclick="clearMessages()">Clear</button>
+            </div>
+            <div id="messages" class="messages-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <div>Waiting for messages...</div>
+                    <div style="font-size: 12px; margin-top: 10px;">
+                        Make sure udp2sse is running and send some UDP data!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                Connected to <strong>http://localhost:8000/events</strong> |
+                <a href="https://github.com/riccardotornesello/udp2sse" target="_blank">GitHub</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const SSE_URL = 'http://localhost:8000/events';
+        let eventSource = null;
+        let messageCount = 0;
+        let dataCount = 0;
+        let pingCount = 0;
+
+        function updateStatus(status, text) {
+            const statusEl = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            
+            statusEl.className = `status ${status}`;
+            statusText.textContent = text;
+        }
+
+        function updateStats() {
+            document.getElementById('message-count').textContent = messageCount;
+            document.getElementById('data-count').textContent = dataCount;
+            document.getElementById('ping-count').textContent = pingCount;
+        }
+
+        function addMessage(type, content) {
+            const messagesDiv = document.getElementById('messages');
+            
+            // Remove empty state if it exists
+            const emptyState = messagesDiv.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const messageEl = document.createElement('div');
+            messageEl.className = `message event-${type}`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            messageEl.innerHTML = `
+                <div class="message-header">
+                    <span class="message-type">${type}</span>
+                    <span class="message-time">${timeString}</span>
+                </div>
+                ${content ? `<div class="message-content">${escapeHtml(content)}</div>` : ''}
+            `;
+            
+            messagesDiv.insertBefore(messageEl, messagesDiv.firstChild);
+            
+            // Keep only last 100 messages
+            while (messagesDiv.children.length > 100) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+
+            messageCount++;
+            updateStats();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function clearMessages() {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <div>No messages</div>
+                </div>
+            `;
+            messageCount = 0;
+            dataCount = 0;
+            pingCount = 0;
+            updateStats();
+        }
+
+        function connectSSE() {
+            console.log('Connecting to SSE:', SSE_URL);
+            updateStatus('connecting', 'Connecting...');
+
+            eventSource = new EventSource(SSE_URL);
+
+            eventSource.addEventListener('connected', (e) => {
+                console.log('Connected event received');
+                updateStatus('connected', 'Connected');
+                addMessage('connected', 'Successfully connected to udp2sse');
+            });
+
+            eventSource.addEventListener('data', (e) => {
+                console.log('Data event received:', e.data);
+                try {
+                    // Decode base64 data
+                    const decoded = atob(e.data);
+                    addMessage('data', decoded);
+                    dataCount++;
+                    updateStats();
+                } catch (error) {
+                    console.error('Failed to decode data:', error);
+                    // Generic error message to avoid displaying potentially malicious base64 data
+                    addMessage('data', `[Error decoding base64 data]`);
+                }
+            });
+
+            eventSource.addEventListener('ping', (e) => {
+                console.log('Ping event received');
+                addMessage('ping', 'Keepalive ping');
+                pingCount++;
+                updateStats();
+            });
+
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                updateStatus('disconnected', 'Disconnected');
+                
+                // Try to reconnect after 5 seconds
+                setTimeout(() => {
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        console.log('Attempting to reconnect...');
+                        connectSSE();
+                    }
+                }, 5000);
+            };
+        }
+
+        // Connect on page load
+        window.addEventListener('load', () => {
+            connectSSE();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+    </script>
+</body>
+</html>
