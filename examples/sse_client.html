@@ -391,7 +391,8 @@
                     updateStats();
                 } catch (error) {
                     console.error('Failed to decode data:', error);
-                    addMessage('data', `[Error decoding: ${e.data}]`);
+                    // escapeHtml will prevent XSS when displaying error data
+                    addMessage('data', `[Error decoding base64 data]`);
                 }
             });
 

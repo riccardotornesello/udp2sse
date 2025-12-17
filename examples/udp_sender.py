@@ -23,7 +23,7 @@ def send_udp_message(sock, message):
         message = message.encode('utf-8')
     
     sock.sendto(message, (UDP_HOST, UDP_PORT))
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Sent: {message.decode('utf-8', errors='ignore')}")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Sent: {message.decode('utf-8', errors='replace')}")
 
 def main():
     print("=== UDP Sender for udp2sse ===")

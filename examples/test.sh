@@ -39,14 +39,14 @@ fi
 echo "Test 1: Send a simple message via UDP"
 echo "---------------------------------------"
 echo "Sending: 'Hello from test script'"
-echo "Hello from test script" | nc -u -w1 $UDP_HOST $UDP_PORT
+echo "Hello from test script" | nc -u -w3 $UDP_HOST $UDP_PORT
 echo "✓ Message sent"
 echo ""
 
 echo "Test 2: Send multiple messages"
 echo "---------------------------------------"
 for i in {1..5}; do
-    echo "Message #$i" | nc -u -w1 $UDP_HOST $UDP_PORT
+    echo "Message #$i" | nc -u -w3 $UDP_HOST $UDP_PORT
     echo "Sent: Message #$i"
     sleep 0.5
 done
